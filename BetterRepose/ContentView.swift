@@ -5,6 +5,7 @@
 //  Created by Armando Francisco on 10/29/24.
 //
 
+import CoreML
 import SwiftUI
 
 struct ContentView: View {
@@ -12,8 +13,32 @@ struct ContentView: View {
     @State private var wakeUp = Date.now
     @State private var coffeAmount = 1
     
+    @State private var alertTile = ""
+    @State private var alertMessage = ""
+    @State private var showingAlert = false
+    
     func calculateBedtime() {
+        do {
+            let config = MLModelConfiguration()
+            let model = try SleepCalculator(configuration: config)
             
+            let components = Calendar.current.dateComponents([.hour, .minute], from: wakeUp)
+            
+            let hour = (components.hour ?? 0) * 60 * 60
+            let minute = (components.minute ?? 0) * 60
+            
+            let prediction = try model.prediction(wake: Double(hour + minute), estimatedSleep: sleepAmount, coffee: Double(coffeAmount))
+            
+            let sleepTime = wakeUp - prediction.actualSleep
+            
+            alertTile = "Your ideal bedtime is..."
+            alertMessage = sleepTime.formatted(date: .omitted, time: .shortened)
+        } catch {
+            alertTile = "Error"
+            alertMessage = "Sorry there was an error calculating your bedtime:\(error)"
+        }
+        
+        showingAlert = true
     }
     var body: some View {
         NavigationStack {
@@ -36,10 +61,17 @@ struct ContentView: View {
                     
                 Stepper(coffeAmount == 1 ? "\(coffeAmount) cup" : "\(coffeAmount) cups(s)", value: $coffeAmount, in: 1...20)
             }
+            .navigationBarTitle("Better Repose")
             .toolbar {
                 Button("Calculate bedtime", action: calculateBedtime)
             }
-            .navigationBarTitle("Better Repose")
+            .alert(alertTile, isPresented: $showingAlert) {
+                Button("OK") {
+                    
+                }
+            } message: {
+                Text(alertMessage)
+            }
         }
     }
 }
