@@ -13,9 +13,9 @@ struct ContentView: View {
     @State private var wakeUp = defaultWakeTime
     @State private var coffeAmount = 1
     
-    @State private var alertTile = ""
-    @State private var alertMessage = ""
-    @State private var showingAlert = false
+    //@State private var alertTile = ""
+    //@State private var alertMessage = ""
+    //@State private var showingAlert = false
     
     static var defaultWakeTime: Date {
         var components = DateComponents()
@@ -25,7 +25,8 @@ struct ContentView: View {
         
     }
     
-    func calculateBedtime() {
+    private var calculateBedtime: (title: String, message: String) {
+        
         do {
             let config = MLModelConfiguration()
             let model = try SleepCalculator(configuration: config)
@@ -39,54 +40,77 @@ struct ContentView: View {
             
             let sleepTime = wakeUp - prediction.actualSleep
             
-            alertTile = "Your ideal bedtime is..."
-            alertMessage = sleepTime.formatted(date: .omitted, time: .shortened)
+            //alertTile = "Your ideal bedtime is..."
+            
+            //alertMessage = sleepTime.formatted(date: .omitted, time: .shortened)
+            //showingAlert = true
+            
+            return ("Your ideal bedtime is...", sleepTime.formatted(date: .omitted, time: .shortened))
         } catch {
-            alertTile = "Error"
-            alertMessage = "Sorry there was an error calculating your bedtime:\(error)"
+            
+            //alertTile = "Error"
+            //alertMessage = "Sorry there was an error calculating your bedtime:\(error)"
+            return ("Error", "Sorry there was an error calculating your bedtime:\(error)")
         }
-        
-        showingAlert = true
     }
+    
+    
     var body: some View {
         NavigationStack {
             Form {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("When do you want to wake up?")
-                        .font(.headline)
-                    
+                Section("When do you want to wake up?") {
+                    //Text("When do you want to wake up?")
+                    //  .font(.headline)
                     DatePicker("Please enter a time", selection: $wakeUp, displayedComponents: .hourAndMinute)
                         .datePickerStyle(.automatic)
                         .labelsHidden()
                 }
                 
-               
-                    
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Desired amount of sleep")
-                        .font(.headline)
+                Section("Desired amount of sleep") {
+                    //Text("Desired amount of sleep")
+                    //  .font(.headline)
                     
                     Stepper("\(sleepAmount.formatted()) hours", value: $sleepAmount, in: 4...12, step: 0.25)
                 }
-                         
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Daily coffee intake")
-                        .font(.headline)
-                        
-                    Stepper("^[\(coffeAmount) cup](inflect: true)", value: $coffeAmount, in: 1...20)
-                }
-                            }
-            .navigationBarTitle("Better Repose")
-            .toolbar {
-                Button("Calculate bedtime", action: calculateBedtime)
-            }
-            .alert(alertTile, isPresented: $showingAlert) {
-                Button("OK") {
+                
+                Section("Daily coffee intake") {
+                    //Text("Daily coffee intake")
+                    //  .font(.headline)
                     
+                    Picker("Coffee intake", selection: $coffeAmount) {
+                        ForEach(1...20, id: \.self) {
+                            Text("^[\($0) cup](inflect: true)")
+                        }
+                    }
+                    //Stepper("^[\(coffeAmount) cup](inflect: true)", value: $coffeAmount, in: 1...20)
                 }
-            } message: {
-                Text(alertMessage)
+                
+                VStack {
+                    HStack {
+                        Text("\(calculateBedtime.title)\n")
+                            .font(.title3)
+                    }
+                    HStack {
+                        Spacer()
+                        Text("\(calculateBedtime.message)")
+                            .font(.title)
+                            .bold()
+                        Spacer()
+                    }
+                }
             }
+            
+            .navigationBarTitle("Better Repose")
+//            .toolbar {
+//            Button("Calculate bedtime", action: calculateBedtime)
+//            }
+//            .alert(alertTile, isPresented: $showingAlert) {
+//                Button("OK") {
+//                    
+//                }
+//            } message: {
+//                Text(alertMessage)
+//            }
         }
     }
 }
